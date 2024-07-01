@@ -63,6 +63,26 @@ class ListadoClientes extends StatelessWidget {
                       color: Colors.grey[800],
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.edit),
+                        onPressed: () {
+                          // Acción al presionar el ícono de editar
+                          // Puedes implementar la lógica aquí
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.delete),
+                        onPressed: () {
+                          // Acción al presionar el ícono de eliminar
+                          // Puedes implementar la lógica aquí
+                        },
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
