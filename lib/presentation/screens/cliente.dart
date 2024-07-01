@@ -1,12 +1,10 @@
-// cliente.dart
-
 class Cliente {
-  final String tipo;
-  final String nombreNegocio;
-  final String nombreContacto;
-  final String telefono;
-  final String ciudad;
-  final String direccion;
+  String tipo;
+  String nombreNegocio;
+  String nombreContacto;
+  String telefono;
+  String ciudad;
+  String direccion;
 
   Cliente({
     required this.tipo,

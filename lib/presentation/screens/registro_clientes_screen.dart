@@ -43,8 +43,7 @@ class _RegistroClientesScreenState extends State<RegistroClientesScreen> {
                   _tipo = value;
                 });
               },
-              validator: (value) =>
-                  value == null ? 'Seleccione un tipo' : null,
+              validator: (value) => value == null ? 'Seleccione un tipo' : null,
             ),
             TextFormField(
               decoration: const InputDecoration(
@@ -86,8 +85,7 @@ class _RegistroClientesScreenState extends State<RegistroClientesScreen> {
               decoration: const InputDecoration(labelText: 'Ciudad'),
               items: const [
                 DropdownMenuItem(value: 'Quito', child: Text('Quito')),
-                DropdownMenuItem(
-                    value: 'Guayaquil', child: Text('Guayaquil')),
+                DropdownMenuItem(value: 'Guayaquil', child: Text('Guayaquil')),
               ],
               onChanged: (value) {
                 setState(() {
@@ -120,7 +118,8 @@ class _RegistroClientesScreenState extends State<RegistroClientesScreen> {
                     ciudad: _ciudad!,
                     direccion: _direccion,
                   );
-                  widget.onClienteSaved(nuevoCliente); // Llama a la función onClienteSaved
+                  widget.onClienteSaved(
+                      nuevoCliente); // Llama a la función onClienteSaved
                   _resetForm();
                 }
               },

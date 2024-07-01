@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:hello_world_app/presentation/screens/EditarClienteScreen.dart';
 import 'cliente.dart';
 
-class ListadoClientes extends StatelessWidget {
+
+class ListadoClientes extends StatefulWidget {
   final List<Cliente> clientes;
 
   const ListadoClientes({
@@ -10,12 +12,51 @@ class ListadoClientes extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  _ListadoClientesState createState() => _ListadoClientesState();
+}
+
+class _ListadoClientesState extends State<ListadoClientes> {
+  late List<Cliente> _clientes;
+
+  @override
+  void initState() {
+    super.initState();
+    _clientes = widget.clientes;
+  }
+
+  void _eliminarCliente(int index) {
+    setState(() {
+      _clientes.removeAt(index);
+    });
+  }
+
+  void _editarCliente(Cliente clienteActualizado, int index) {
+    setState(() {
+      _clientes[index] = clienteActualizado;
+    });
+  }
+
+  void _navegarYEditarCliente(BuildContext context, int index) async {
+    final cliente = _clientes[index];
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => EditarClienteScreen(
+          cliente: cliente,
+          onSave: (clienteActualizado) {
+            _editarCliente(clienteActualizado, index);
+          },
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Expanded(
       child: ListView.builder(
-        itemCount: clientes.length,
+        itemCount: _clientes.length,
         itemBuilder: (context, index) {
-          final cliente = clientes[index];
+          final cliente = _clientes[index];
           return Card(
             elevation: 4,
             margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -24,6 +65,14 @@ class ListadoClientes extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text(
+                    cliente.tipo,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
                   Text(
                     cliente.nombreNegocio,
                     style: TextStyle(
@@ -70,15 +119,13 @@ class ListadoClientes extends StatelessWidget {
                       IconButton(
                         icon: Icon(Icons.edit),
                         onPressed: () {
-                          // Acción al presionar el ícono de editar
-                          // Puedes implementar la lógica aquí
+                          _navegarYEditarCliente(context, index);
                         },
                       ),
                       IconButton(
                         icon: Icon(Icons.delete),
                         onPressed: () {
-                          // Acción al presionar el ícono de eliminar
-                          // Puedes implementar la lógica aquí
+                          _eliminarCliente(index);
                         },
                       ),
                     ],
