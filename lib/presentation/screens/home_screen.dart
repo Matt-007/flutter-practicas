@@ -1,41 +1,23 @@
 import 'package:flutter/material.dart';
-import 'registro_clientes_screen.dart';
-import 'listado_clientes.dart';
-import 'cliente.dart';
+import 'registro_clientes_screen.dart'; // Importa el archivo correcto de RegistroClientesScreen
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+void main() {
+  String token =
+      'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJkZXNhcnJvbGxvIiwidGVuYW50aWQiOiIxMSIsImV4cCI6MTcyMDE2MzI5MSwidXNlcmlkIjoiMTAwMDA3MiIsInJvbCI6IkdhcmRlbldvcmxkIEFkbWluIn0.lGWbREum03rKflZNym0a-MmxOitykB_uaNkg6HG5wFXGINHwBOzG0l5ND0C4octrT_v8kDKfDmlNwVp171FEbw';
 
-  @override
-  _HomeScreenState createState() => _HomeScreenState();
+  runApp(MyApp(token: token));
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  List<Cliente> _clientes = [];
+class MyApp extends StatelessWidget {
+  final String token;
+
+  MyApp({required this.token});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Registro y Listado de Clientes'),
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          RegistroClientesScreen(
-            onClienteSaved: _agregarCliente, // Pasa la función _agregarCliente
-          ),
-          const SizedBox(height: 20),
-          ListadoClientes(clientes: _clientes),
-        ],
-      ),
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: RegistroClientesScreen(token: token),
     );
-  }
-
-  void _agregarCliente(Cliente cliente) {
-    setState(() {
-      _clientes.add(cliente);
-    });
-    print('Cliente guardado: $cliente');
   }
 }

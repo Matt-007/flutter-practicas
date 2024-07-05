@@ -1,18 +1,19 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'actualizar_clientes_screen.dart';
+import 'dart:convert';
 
-class RegistroClientesScreen extends StatefulWidget {
+class ActualizarClientesScreen extends StatefulWidget {
   final String token;
+  final int clientId; // ID del cliente a actualizar
 
-  RegistroClientesScreen({required this.token});
+  ActualizarClientesScreen({required this.token, required this.clientId});
 
   @override
-  _RegistroClientesScreenState createState() => _RegistroClientesScreenState();
+  _ActualizarClientesScreenState createState() =>
+      _ActualizarClientesScreenState();
 }
 
-class _RegistroClientesScreenState extends State<RegistroClientesScreen> {
+class _ActualizarClientesScreenState extends State<ActualizarClientesScreen> {
   // Variables para las opciones del dropdown
   final List<String> tipoOptions = ['Option 1', 'Option 2'];
   final List<String> ciudadOptions = ['Quito', 'Guayaquil'];
@@ -27,9 +28,54 @@ class _RegistroClientesScreenState extends State<RegistroClientesScreen> {
   TextEditingController _telefonoController = TextEditingController();
   TextEditingController _direccionController = TextEditingController();
 
-  void _guardarCliente() async {
-    final url =
-        Uri.parse('https://aibootbackend.sistemaagil.net/api/bpartner/');
+  @override
+  void initState() {
+    super.initState();
+    _fetchClientData();
+  }
+
+  Future<void> _fetchClientData() async {
+    final url = Uri.parse(
+        'https://aibootbackend.sistemaagil.net/api/bpartner/${widget.clientId}');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer ${widget.token}',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          _nombreNegocioController.text = data['name'];
+          _nombreContactoController.text = data['contacts'][0]['name'];
+          _telefonoController.text = data['contacts'][0]['phone'];
+          _direccionController.text =
+              data['bplocation'][0]['location']['address1'];
+          _selectedCiudad = data['bplocation'][0]['name'];
+        });
+      } else {
+        print('Error al obtener los datos del cliente: ${response.statusCode}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Error al obtener los datos del cliente: ${response.statusCode}'),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
+
+  void _actualizarCliente() async {
+    final url = Uri.parse(
+        'https://aibootbackend.sistemaagil.net/api/bpartner/${widget.clientId}');
 
     Map<String, String> headers = {
       'Authorization': 'Bearer ${widget.token}',
@@ -65,34 +111,25 @@ class _RegistroClientesScreenState extends State<RegistroClientesScreen> {
     };
 
     try {
-      final response = await http.post(
+      final response = await http.patch(
         url,
         headers: headers,
         body: jsonEncode(body),
       );
 
       if (response.statusCode == 200) {
-        // Cliente registrado exitosamente
-        print('Cliente registrado exitosamente');
+        // Cliente actualizado exitosamente
+        print('Cliente actualizado exitosamente');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Cliente registrado exitosamente')),
+          SnackBar(content: Text('Cliente actualizado exitosamente')),
         );
-        // Limpiar campos después de registrar el cliente
-        _nombreNegocioController.clear();
-        _nombreContactoController.clear();
-        _telefonoController.clear();
-        _direccionController.clear();
-        setState(() {
-          _selectedTipo = tipoOptions.first;
-          _selectedCiudad = ciudadOptions.first;
-        });
       } else {
-        // Error al registrar el cliente
-        print('Error al registrar el cliente: ${response.statusCode}');
+        // Error al actualizar el cliente
+        print('Error al actualizar el cliente: ${response.statusCode}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content:
-                Text('Error al registrar el cliente: ${response.statusCode}'),
+                Text('Error al actualizar el cliente: ${response.statusCode}'),
           ),
         );
       }
@@ -162,22 +199,7 @@ class _RegistroClientesScreenState extends State<RegistroClientesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Clientes'),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            int clientId = 123; // Asegúrate de pasar el ID del cliente correcto
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ActualizarClientesScreen(
-                  token: widget.token,
-                  clientId: clientId,
-                ),
-              ),
-            );
-          },
-        ),
+        title: Text('Actualizar Cliente'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -185,7 +207,7 @@ class _RegistroClientesScreenState extends State<RegistroClientesScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Registro de clientes',
+              'Actualizar Cliente',
               style: TextStyle(
                 fontSize: 24.0,
                 fontWeight: FontWeight.bold,
@@ -238,8 +260,8 @@ class _RegistroClientesScreenState extends State<RegistroClientesScreen> {
             ),
             SizedBox(height: 20.0),
             ElevatedButton(
-              onPressed: _guardarCliente,
-              child: Text('Guardar Cliente'),
+              onPressed: _actualizarCliente,
+              child: Text('Actualizar Cliente'),
               style: ElevatedButton.styleFrom(
                 padding: EdgeInsets.symmetric(vertical: 16.0),
                 textStyle: TextStyle(fontSize: 16.0),
