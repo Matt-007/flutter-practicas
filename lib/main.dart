@@ -23,8 +23,7 @@ import 'package:flutter/material.dart';
 import 'presentation/screens/ListadoClientesScreen.dart'; // Asegúrate de tener la importación correcta
 
 void main() {
-  String token =
-      'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJkZXNhcnJvbGxvIiwidGVuYW50aWQiOiIxMSIsImV4cCI6MTcyMDA4NzAwNCwidXNlcmlkIjoiMTAwMDA3MiIsInJvbCI6IkdhcmRlbldvcmxkIEFkbWluIn0.wM1T2HPUFEKwEtm1ApJpU6t8zzVEjbIgyrZgRjVmKU0o4omOefBMkkLQgwMOHW0R5sLgw-z8KvD9j1N-zy6lfg';
+  String token ='eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJkZXNhcnJvbGxvIiwidGVuYW50aWQiOiIxMSIsImV4cCI6MTcyMDIyMjU5NiwidXNlcmlkIjoiMTAwMDA3MiIsInJvbCI6IkdhcmRlbldvcmxkIEFkbWluIn0.0nYQJRmUrLkRrQgwNNFZz7VWcra_7LxgRJSEukUBxDL6nhMvxOsFGNDDnntdZNXsX6Q3ZQpUJslBgNgHx0m8DQ';
 
   runApp(MyApp(token: token));
 }
