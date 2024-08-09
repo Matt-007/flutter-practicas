@@ -1,145 +1,252 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'cliente.dart'; // Asegúrate de importar la clase Cliente si no lo has hecho aún
+import 'package:http/http.dart' as http;
+import 'actualizar_clientes_screen.dart';
 
 class RegistroClientesScreen extends StatefulWidget {
-  final Function(Cliente) onClienteSaved;
+  final String token;
 
-  const RegistroClientesScreen({
-    Key? key,
-    required this.onClienteSaved,
-  }) : super(key: key);
+  const RegistroClientesScreen({required this.token, Key? key})
+      : super(key: key);
 
   @override
-  State<RegistroClientesScreen> createState() => _RegistroClientesScreenState();
+  _RegistroClientesScreenState createState() => _RegistroClientesScreenState();
 }
 
 class _RegistroClientesScreenState extends State<RegistroClientesScreen> {
-  final _formKey = GlobalKey<FormState>();
-  String? _tipo;
-  String _nombreNegocio = '';
-  String _nombreContacto = '';
-  String _telefono = '';
-  String? _ciudad;
-  String _direccion = '';
+  // Opciones del dropdown
+  final List<String> tipoOptions = ['Option 1', 'Option 2'];
+  final List<String> ciudadOptions = ['Quito', 'Guayaquil'];
 
-  @override
-  Widget build(BuildContext context) {
+  // Estado de las selecciones del dropdown
+  String _selectedTipo = 'Option 1';
+  String _selectedCiudad = 'Quito';
+
+  // Controladores de texto
+  final TextEditingController _nombreNegocioController =
+      TextEditingController();
+  final TextEditingController _nombreContactoController =
+      TextEditingController();
+  final TextEditingController _telefonoController = TextEditingController();
+  final TextEditingController _direccionController = TextEditingController();
+
+  Future<void> _guardarCliente() async {
+    final url =
+        Uri.parse('https://aibootbackend.sistemaagil.net/api/bpartner/');
+
+    final Map<String, String> headers = {
+      'Authorization': 'Bearer ${widget.token}',
+      'Content-Type': 'application/json',
+    };
+
+    final Map<String, dynamic> body = {
+      'value': '01',
+      'name': _nombreNegocioController.text,
+      'tenant': 1000000,
+      'org': 1000000,
+      'createdby': 100,
+      'updatedby': 100,
+      'bpgroup': {'id': 103},
+      'bplocation': [
+        {
+          'tenant': 1000000,
+          'org': 1000000,
+          'createdby': 100,
+          'updatedby': 100,
+          'name': _selectedCiudad,
+          'location': {
+            'address1': _direccionController.text,
+          },
+        },
+      ],
+      'contacts': [
+        {
+          'name': _nombreContactoController.text,
+          'phone': _telefonoController.text,
+        },
+      ],
+    };
+
+    try {
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cliente registrado exitosamente')),
+        );
+        // Limpiar campos después de registrar el cliente
+        _limpiarCampos();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  'Error al registrar el cliente: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
+
+  void _limpiarCampos() {
+    _nombreNegocioController.clear();
+    _nombreContactoController.clear();
+    _telefonoController.clear();
+    _direccionController.clear();
+    setState(() {
+      _selectedTipo = tipoOptions.first;
+      _selectedCiudad = ciudadOptions.first;
+    });
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String labelText,
+    required String hintText,
+  }) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DropdownButtonFormField<String>(
-              value: _tipo,
-              decoration: const InputDecoration(labelText: 'Tipo'),
-              items: const [
-                DropdownMenuItem(value: 'Option 1', child: Text('Opción 1')),
-                DropdownMenuItem(value: 'Option 2', child: Text('Opción 2')),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  _tipo = value;
-                });
-              },
-              validator: (value) => value == null ? 'Seleccione un tipo' : null,
-            ),
-            TextFormField(
-              decoration: const InputDecoration(
-                  labelText: 'Nombre del negocio',
-                  hintText: 'Ej: Inversiones XYZ'),
-              onChanged: (value) {
-                setState(() {
-                  _nombreNegocio = value;
-                });
-              },
-              validator: (value) =>
-                  value!.isEmpty ? 'Ingrese el nombre del negocio' : null,
-            ),
-            TextFormField(
-              decoration: const InputDecoration(
-                  labelText: 'Nombre de contacto', hintText: 'Ej: Maria'),
-              onChanged: (value) {
-                setState(() {
-                  _nombreContacto = value;
-                });
-              },
-              validator: (value) =>
-                  value!.isEmpty ? 'Ingrese el nombre de contacto' : null,
-            ),
-            TextFormField(
-              decoration: const InputDecoration(
-                  labelText: 'Teléfono', hintText: 'Ej: 04125555555'),
-              keyboardType: TextInputType.phone,
-              onChanged: (value) {
-                setState(() {
-                  _telefono = value;
-                });
-              },
-              validator: (value) =>
-                  value!.isEmpty ? 'Ingrese el teléfono' : null,
-            ),
-            DropdownButtonFormField<String>(
-              value: _ciudad,
-              decoration: const InputDecoration(labelText: 'Ciudad'),
-              items: const [
-                DropdownMenuItem(value: 'Quito', child: Text('Quito')),
-                DropdownMenuItem(value: 'Guayaquil', child: Text('Guayaquil')),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  _ciudad = value;
-                });
-              },
-              validator: (value) =>
-                  value == null ? 'Seleccione una ciudad' : null,
-            ),
-            TextFormField(
-              decoration: const InputDecoration(
-                  labelText: 'Dirección', hintText: 'Ej: Carrera x calle 2'),
-              onChanged: (value) {
-                setState(() {
-                  _direccion = value;
-                });
-              },
-              validator: (value) =>
-                  value!.isEmpty ? 'Ingrese la dirección' : null,
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  final nuevoCliente = Cliente(
-                    tipo: _tipo!,
-                    nombreNegocio: _nombreNegocio,
-                    nombreContacto: _nombreContacto,
-                    telefono: _telefono,
-                    ciudad: _ciudad!,
-                    direccion: _direccion,
-                  );
-                  widget.onClienteSaved(
-                      nuevoCliente); // Llama a la función onClienteSaved
-                  _resetForm();
-                }
-              },
-              child: const Text('Guardar'),
-            ),
-          ],
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: labelText,
+          hintText: hintText,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          filled: true,
+          fillColor: Colors.blue.shade50,
         ),
       ),
     );
   }
 
-  void _resetForm() {
-    _formKey.currentState?.reset();
-    setState(() {
-      _tipo = null;
-      _nombreNegocio = '';
-      _nombreContacto = '';
-      _telefono = '';
-      _ciudad = null;
-      _direccion = '';
-    });
+  Widget _buildDropdownField({
+    required String value,
+    required String labelText,
+    required String hintText,
+    required List<String> options,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: DropdownButtonFormField<String>(
+        value: value,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          labelText: labelText,
+          hintText: hintText,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          filled: true,
+          fillColor: Colors.blue.shade50,
+        ),
+        items: options.map((String option) {
+          return DropdownMenuItem<String>(
+            value: option,
+            child: Text(option),
+          );
+        }).toList(),
+      ),
+    );
   }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Clientes'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ActualizarClientesScreen(
+                  token: widget.token,
+                  clientId: 123,
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Registro de clientes',
+              style: TextStyle(
+                fontSize: 24.0,
+                fontWeight: FontWeight.bold,
+                color: Colors.blue,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16.0),
+            _buildDropdownField(
+              value: _selectedTipo,
+              labelText: 'Tipo',
+              hintText: 'Option 1',
+              options: tipoOptions,
+              onChanged: (value) {
+                setState(() {
+                  _selectedTipo = value!;
+                });
+              },
+            ),
+            _buildTextField(
+              controller: _nombreNegocioController,
+              labelText: 'Nombre del negocio',
+              hintText: 'Ej: Inversiones XYZ',
+            ),
+            _buildTextField(
+              controller: _nombreContactoController,
+              labelText: 'Nombre de contacto',
+              hintText: 'Ej: Maria',
+            ),
+            _buildTextField(
+              controller: _telefonoController,
+              labelText: 'Teléfono',
+              hintText: 'Ej: 04125555555',
+            ),
+            _buildDropdownField(
+              value: _selectedCiudad,
+              labelText: 'Ciudad',
+              hintText: 'Quito',
+              options: ciudadOptions,
+              onChanged: (value) {
+                setState(() {
+                  _selectedCiudad = value!;
+                });
+              },
+            ),
+            _buildTextField(
+              controller: _direccionController,
+              labelText: 'Dirección',
+              hintText: 'Ej: Carrera x calle 2',
+            ),
+            const SizedBox(height: 20.0),
+            ElevatedButton(
+              onPressed: _guardarCliente,
+              child: const Text('Guardar Cliente'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                textStyle: const TextStyle(fontSize: 16.0),
+              ),
+            ),
+          ],
+        ),
+),
+);
+}
 }

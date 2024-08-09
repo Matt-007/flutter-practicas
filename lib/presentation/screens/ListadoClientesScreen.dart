@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hello_world_app/presentation/screens/registro_clientes_screen.dart';
 import 'fetch_names.dart';
 
 class ListadoClientesScreen extends StatefulWidget {
@@ -14,7 +15,7 @@ class _ListadoClientesScreenState extends State<ListadoClientesScreen> {
   late Future<List<Map<String, dynamic>>> futureClientes;
   List<Map<String, dynamic>> allClientes = [];
   List<Map<String, dynamic>> filteredClientes = [];
-  TextEditingController searchController = TextEditingController();
+  final TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
@@ -88,17 +89,32 @@ class _ListadoClientesScreenState extends State<ListadoClientesScreen> {
                 ),
               ),
             ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RegistroClientesScreen(
+                      token: widget.token,
+                    ),
+                  ),
+                );
+              },
+              child: Text('Agregar Cliente'),
+            ),
             Expanded(
               child: FutureBuilder<List<Map<String, dynamic>>>(
                 future: futureClientes,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return CircularProgressIndicator();
+                    return Center(child: CircularProgressIndicator());
                   } else if (snapshot.hasError) {
-                    return Text('Error: ${snapshot.error}',
-                        style: TextStyle(color: Colors.red));
+                    return Center(
+                      child: Text('Error: ${snapshot.error}',
+                          style: TextStyle(color: Colors.red)),
+                    );
                   } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return Text('No se encontraron nombres');
+                    return Center(child: Text('No se encontraron nombres'));
                   } else {
                     return ListView.builder(
                       itemCount: filteredClientes.length,
@@ -118,10 +134,7 @@ class _ListadoClientesScreenState extends State<ListadoClientesScreen> {
                             color: Colors.red,
                             alignment: Alignment.centerRight,
                             padding: EdgeInsets.symmetric(horizontal: 20),
-                            child: Icon(
-                              Icons.delete,
-                              color: Colors.white,
-                            ),
+                            child: Icon(Icons.delete, color: Colors.white),
                           ),
                           child: Card(
                             margin: EdgeInsets.symmetric(
@@ -147,7 +160,7 @@ class _ListadoClientesScreenState extends State<ListadoClientesScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
+),
+);
+}
 }
