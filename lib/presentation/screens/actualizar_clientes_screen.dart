@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Importar esto para usar LengthLimitingTextInputFormatter
+import 'package:http/http.dart' as http;
 
 class ActualizarClientesScreen extends StatefulWidget {
   final String token;
-  final int clientId; // ID del cliente a actualizar
+  final int clientId;
 
   ActualizarClientesScreen({required this.token, required this.clientId});
 
@@ -14,15 +15,12 @@ class ActualizarClientesScreen extends StatefulWidget {
 }
 
 class _ActualizarClientesScreenState extends State<ActualizarClientesScreen> {
-  // Variables para las opciones del dropdown
   final List<String> tipoOptions = ['Option 1', 'Option 2'];
   final List<String> ciudadOptions = ['Quito', 'Guayaquil'];
 
-  // Variables para mantener el estado de las selecciones del dropdown
   String _selectedTipo = 'Option 1';
   String _selectedCiudad = 'Quito';
 
-  // Inicializando los controladores de texto
   TextEditingController _nombreNegocioController = TextEditingController();
   TextEditingController _nombreContactoController = TextEditingController();
   TextEditingController _telefonoController = TextEditingController();
@@ -31,12 +29,12 @@ class _ActualizarClientesScreenState extends State<ActualizarClientesScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchClientData();
+    _fetchClientData(widget.clientId);
   }
 
-  Future<void> _fetchClientData() async {
+  Future<void> _fetchClientData(int clientId) async {
     final url = Uri.parse(
-        'https://aibootbackend.sistemaagil.net/api/bpartner/${widget.clientId}');
+        'https://aibootbackend.sistemaagil.net/api/bpartner/$clientId/');
 
     try {
       final response = await http.get(
@@ -56,13 +54,16 @@ class _ActualizarClientesScreenState extends State<ActualizarClientesScreen> {
               data['bplocation'][0]['location']['address1'];
           _selectedCiudad = data['bplocation'][0]['name'];
         });
+      } else if (response.statusCode == 404) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Cliente no encontrado (Error 404)')),
+        );
       } else {
         print('Error al obtener los datos del cliente: ${response.statusCode}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-                'Error al obtener los datos del cliente: ${response.statusCode}'),
-          ),
+              content: Text(
+                  'Error al obtener los datos del cliente: ${response.statusCode}')),
         );
       }
     } catch (e) {
@@ -74,22 +75,32 @@ class _ActualizarClientesScreenState extends State<ActualizarClientesScreen> {
   }
 
   void _actualizarCliente() async {
-    final url = Uri.parse(
-        'https://aibootbackend.sistemaagil.net/api/bpartner/${widget.clientId}');
+    if (_telefonoController.text.length < 9 ||
+        _telefonoController.text.length > 10) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content:
+                Text('El número de teléfono debe tener entre 9 y 10 dígitos')),
+      );
+      return;
+    }
 
-    Map<String, String> headers = {
+    final url = Uri.parse(
+        'https://aibootbackend.sistemaagil.net/api/bpartner/${widget.clientId}/');
+
+    final Map<String, String> headers = {
       'Authorization': 'Bearer ${widget.token}',
       'Content-Type': 'application/json',
     };
 
-    Map<String, dynamic> body = {
-      'value': '01', // Ejemplo de valor, ajusta según sea necesario
+    final Map<String, dynamic> body = {
+      'value': '01',
       'name': _nombreNegocioController.text,
       'tenant': 1000000,
       'org': 1000000,
       'createdby': 100,
       'updatedby': 100,
-      'bpgroup': {'id': 1000013},
+      'bpgroup': {'id': 103},
       'bplocation': [
         {
           'tenant': 1000000,
@@ -118,26 +129,23 @@ class _ActualizarClientesScreenState extends State<ActualizarClientesScreen> {
       );
 
       if (response.statusCode == 200) {
-        // Cliente actualizado exitosamente
         print('Cliente actualizado exitosamente');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Cliente actualizado exitosamente')),
         );
       } else {
-        // Error al actualizar el cliente
-        print('Error al actualizar el cliente: ${response.statusCode}');
+        final errorMessage =
+            'Error al actualizar el cliente: ${response.statusCode}\n${response.body}';
+        print(errorMessage);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content:
-                Text('Error al actualizar el cliente: ${response.statusCode}'),
-          ),
+          SnackBar(content: Text(errorMessage)),
         );
       }
     } catch (e) {
-      // Error general
-      print('Error: $e');
+      final errorMessage = 'Error: $e';
+      print(errorMessage);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+        SnackBar(content: Text(errorMessage)),
       );
     }
   }
@@ -146,11 +154,17 @@ class _ActualizarClientesScreenState extends State<ActualizarClientesScreen> {
     required TextEditingController controller,
     required String labelText,
     required String hintText,
+    int? maxLength,
+    TextInputType? keyboardType,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: TextField(
         controller: controller,
+        keyboardType: keyboardType,
+        inputFormatters: [
+          if (maxLength != null) LengthLimitingTextInputFormatter(maxLength),
+        ],
         decoration: InputDecoration(
           labelText: labelText,
           hintText: hintText,
@@ -223,7 +237,7 @@ class _ActualizarClientesScreenState extends State<ActualizarClientesScreen> {
               options: tipoOptions,
               onChanged: (value) {
                 setState(() {
-                  _selectedTipo = value!;
+                  _selectedTipo = value ?? _selectedTipo;
                 });
               },
             ),
@@ -241,24 +255,25 @@ class _ActualizarClientesScreenState extends State<ActualizarClientesScreen> {
               controller: _telefonoController,
               labelText: 'Teléfono',
               hintText: 'Ej: 04125555555',
+              maxLength: 10,
+              keyboardType: TextInputType.phone,
             ),
             _buildDropdownField(
               value: _selectedCiudad,
               labelText: 'Ciudad',
-              hintText: 'Quito',
+              hintText: 'Seleccione la ciudad',
               options: ciudadOptions,
               onChanged: (value) {
                 setState(() {
-                  _selectedCiudad = value!;
+                  _selectedCiudad = value ?? _selectedCiudad;
                 });
               },
             ),
             _buildTextField(
               controller: _direccionController,
               labelText: 'Dirección',
-              hintText: 'Ej: Carrera x calle 2',
+              hintText: 'Ej: Calle 123',
             ),
-            SizedBox(height: 20.0),
             ElevatedButton(
               onPressed: _actualizarCliente,
               child: Text('Actualizar Cliente'),

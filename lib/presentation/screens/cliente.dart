@@ -1,4 +1,5 @@
 class Cliente {
+  String id;
   String tipo;
   String nombreNegocio;
   String nombreContacto;
@@ -7,6 +8,7 @@ class Cliente {
   String direccion;
 
   Cliente({
+    required this.id,
     required this.tipo,
     required this.nombreNegocio,
     required this.nombreContacto,

@@ -14,19 +14,28 @@ Future<void> updateClient({
   final url = Uri.parse(
       'https://aibootbackend.sistemaagil.net/api/bpartner/$clientId/');
 
-  Map<String, String> headers = {
+  final Map<String, String> headers = {
     'Authorization': 'Bearer $token',
     'Content-Type': 'application/json',
   };
 
-  Map<String, dynamic> body = {
+  final Map<String, dynamic> body = {
     'tipo': tipo,
-    'nombreNegocio': nombreNegocio,
-    'nombreContacto': nombreContacto,
-    'telefono': telefono,
-    'ciudad': ciudad,
-    'direccion': direccion,
-    // Puedes agregar más campos según sea necesario para la actualización de clientes
+    'name': nombreNegocio,
+    'contacts': [
+      {
+        'name': nombreContacto,
+        'phone': telefono,
+      },
+    ],
+    'bplocation': [
+      {
+        'name': ciudad,
+        'location': {
+          'address1': direccion,
+        },
+      },
+    ],
   };
 
   try {
@@ -34,16 +43,16 @@ Future<void> updateClient({
         await http.patch(url, headers: headers, body: jsonEncode(body));
 
     if (response.statusCode == 200) {
-      // Cliente actualizado exitosamente
       print('Cliente actualizado exitosamente');
     } else {
-      // Error al actualizar el cliente
-      print('Error al actualizar el cliente: ${response.statusCode}');
-      throw Exception('Error al actualizar el cliente: ${response.statusCode}');
+      final errorMessage =
+          'Error al actualizar el cliente: ${response.statusCode}\n${response.body}';
+      print(errorMessage);
+      throw Exception(errorMessage);
     }
   } catch (e) {
-    // Error general
-    print('Error: $e');
-    throw Exception('Error: $e');
+    final errorMessage = 'Error: $e';
+    print(errorMessage);
+    throw Exception(errorMessage);
   }
 }

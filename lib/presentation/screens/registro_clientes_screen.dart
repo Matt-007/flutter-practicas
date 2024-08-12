@@ -1,49 +1,69 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Importar esto para usar LengthLimitingTextInputFormatter
+import 'package:hello_world_app/presentation/screens/ListadoClientesScreen.dart';
 import 'package:http/http.dart' as http;
-import 'actualizar_clientes_screen.dart';
 
 class RegistroClientesScreen extends StatefulWidget {
   final String token;
 
-  RegistroClientesScreen({required this.token});
+  const RegistroClientesScreen({required this.token, Key? key})
+      : super(key: key);
 
   @override
   _RegistroClientesScreenState createState() => _RegistroClientesScreenState();
 }
 
 class _RegistroClientesScreenState extends State<RegistroClientesScreen> {
-  // Variables para las opciones del dropdown
+  // Opciones del dropdown
   final List<String> tipoOptions = ['Option 1', 'Option 2'];
   final List<String> ciudadOptions = ['Quito', 'Guayaquil'];
 
-  // Variables para mantener el estado de las selecciones del dropdown
-  String _selectedTipo = 'Option 1';
-  String _selectedCiudad = 'Quito';
+  // Estado de las selecciones del dropdown
+  String? _selectedTipo;
+  String? _selectedCiudad;
 
-  // Inicializando los controladores de texto
-  TextEditingController _nombreNegocioController = TextEditingController();
-  TextEditingController _nombreContactoController = TextEditingController();
-  TextEditingController _telefonoController = TextEditingController();
-  TextEditingController _direccionController = TextEditingController();
+  // Controladores de texto
+  final TextEditingController _nombreNegocioController =
+      TextEditingController();
+  final TextEditingController _nombreContactoController =
+      TextEditingController();
+  final TextEditingController _telefonoController = TextEditingController();
+  final TextEditingController _direccionController = TextEditingController();
 
-  void _guardarCliente() async {
+  Future<void> _guardarCliente() async {
+    if (_selectedTipo == null ||
+        _selectedCiudad == null ||
+        _nombreNegocioController.text.isEmpty ||
+        _nombreContactoController.text.isEmpty ||
+        _telefonoController.text.isEmpty ||
+        _direccionController.text.isEmpty ||
+        _telefonoController.text.length < 9 ||
+        _telefonoController.text.length > 10) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content:
+                Text('Por favor, complete todos los campos correctamente')),
+      );
+      return;
+    }
+
     final url =
         Uri.parse('https://aibootbackend.sistemaagil.net/api/bpartner/');
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Authorization': 'Bearer ${widget.token}',
       'Content-Type': 'application/json',
     };
 
-    Map<String, dynamic> body = {
-      'value': '01', // Ejemplo de valor, ajusta según sea necesario
+    final Map<String, dynamic> body = {
+      'value': '01',
       'name': _nombreNegocioController.text,
       'tenant': 1000000,
       'org': 1000000,
       'createdby': 100,
       'updatedby': 100,
-      'bpgroup': {'id': 1000013},
+      'bpgroup': {'id': 103},
       'bplocation': [
         {
           'tenant': 1000000,
@@ -72,48 +92,52 @@ class _RegistroClientesScreenState extends State<RegistroClientesScreen> {
       );
 
       if (response.statusCode == 200) {
-        // Cliente registrado exitosamente
-        print('Cliente registrado exitosamente');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Cliente registrado exitosamente')),
+          const SnackBar(content: Text('Cliente registrado exitosamente')),
         );
         // Limpiar campos después de registrar el cliente
-        _nombreNegocioController.clear();
-        _nombreContactoController.clear();
-        _telefonoController.clear();
-        _direccionController.clear();
-        setState(() {
-          _selectedTipo = tipoOptions.first;
-          _selectedCiudad = ciudadOptions.first;
-        });
+        _limpiarCampos();
       } else {
-        // Error al registrar el cliente
-        print('Error al registrar el cliente: ${response.statusCode}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content:
-                Text('Error al registrar el cliente: ${response.statusCode}'),
-          ),
+              content: Text(
+                  'Error al registrar el cliente: ${response.statusCode}')),
         );
       }
     } catch (e) {
-      // Error general
-      print('Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
     }
   }
 
+  void _limpiarCampos() {
+    _nombreNegocioController.clear();
+    _nombreContactoController.clear();
+    _telefonoController.clear();
+    _direccionController.clear();
+    setState(() {
+      _selectedTipo = null;
+      _selectedCiudad = null;
+    });
+  }
+
   Widget _buildTextField({
     required TextEditingController controller,
     required String labelText,
     required String hintText,
+    int? maxLength, // Agregar parámetro opcional para la longitud máxima
+    TextInputType?
+        keyboardType, // Agregar parámetro opcional para el tipo de teclado
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: TextField(
         controller: controller,
+        keyboardType: keyboardType,
+        inputFormatters: [
+          if (maxLength != null) LengthLimitingTextInputFormatter(maxLength),
+        ],
         decoration: InputDecoration(
           labelText: labelText,
           hintText: hintText,
@@ -128,11 +152,11 @@ class _RegistroClientesScreenState extends State<RegistroClientesScreen> {
   }
 
   Widget _buildDropdownField({
-    required String value,
+    required String? value,
     required String labelText,
     required String hintText,
     required List<String> options,
-    required Function(String?) onChanged,
+    required ValueChanged<String?> onChanged,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
@@ -162,17 +186,15 @@ class _RegistroClientesScreenState extends State<RegistroClientesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Clientes'),
+        title: const Text('Clientes'),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            int clientId = 123; // Asegúrate de pasar el ID del cliente correcto
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ActualizarClientesScreen(
+                builder: (context) => ListadoClientesScreen(
                   token: widget.token,
-                  clientId: clientId,
                 ),
               ),
             );
@@ -184,7 +206,7 @@ class _RegistroClientesScreenState extends State<RegistroClientesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
+            const Text(
               'Registro de clientes',
               style: TextStyle(
                 fontSize: 24.0,
@@ -193,15 +215,15 @@ class _RegistroClientesScreenState extends State<RegistroClientesScreen> {
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 16.0),
+            const SizedBox(height: 16.0),
             _buildDropdownField(
               value: _selectedTipo,
               labelText: 'Tipo',
-              hintText: 'Option 1',
+              hintText: 'Escoja un tipo',
               options: tipoOptions,
               onChanged: (value) {
                 setState(() {
-                  _selectedTipo = value!;
+                  _selectedTipo = value;
                 });
               },
             ),
@@ -218,16 +240,18 @@ class _RegistroClientesScreenState extends State<RegistroClientesScreen> {
             _buildTextField(
               controller: _telefonoController,
               labelText: 'Teléfono',
-              hintText: 'Ej: 04125555555',
+              hintText: 'Ej: 0999999999',
+              maxLength: 10, // Agregar longitud máxima
+              keyboardType: TextInputType.phone,
             ),
             _buildDropdownField(
               value: _selectedCiudad,
               labelText: 'Ciudad',
-              hintText: 'Quito',
+              hintText: 'Escoja una ciudad',
               options: ciudadOptions,
               onChanged: (value) {
                 setState(() {
-                  _selectedCiudad = value!;
+                  _selectedCiudad = value;
                 });
               },
             ),
@@ -236,13 +260,13 @@ class _RegistroClientesScreenState extends State<RegistroClientesScreen> {
               labelText: 'Dirección',
               hintText: 'Ej: Carrera x calle 2',
             ),
-            SizedBox(height: 20.0),
+            const SizedBox(height: 20.0),
             ElevatedButton(
               onPressed: _guardarCliente,
-              child: Text('Guardar Cliente'),
+              child: const Text('Guardar Cliente'),
               style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 16.0),
-                textStyle: TextStyle(fontSize: 16.0),
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                textStyle: const TextStyle(fontSize: 16.0),
               ),
             ),
           ],
